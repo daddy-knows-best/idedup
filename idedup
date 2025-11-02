@@ -14,7 +14,7 @@ def main():
 
     number_of_digit = (last_line // 10) + 5
     for key, value in indexed_dedup.items():
-        print(f"{value:>{number_of_digit}} {key}")
+        print(f"{value:>{number_of_digit}}\t{key}")
 
 
 if __name__ == "__main__":
