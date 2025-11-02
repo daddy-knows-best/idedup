@@ -1,6 +1,6 @@
 # idedup
 
-## Expectation
+## Expectation and Proof of Concept
 
 ```
 (idedup) macbookair:idedup seungyeop$ tshark -r test.pcapng -T fields -e frame.protocols | cat -n
