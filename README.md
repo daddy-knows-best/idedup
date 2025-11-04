@@ -1,6 +1,6 @@
 [![Python package](https://github.com/daddy-knows-best/idedup/actions/workflows/python-package.yml/badge.svg)](https://github.com/daddy-knows-best/idedup/actions/workflows/python-package.yml)
 [![Release Python Package](https://github.com/daddy-knows-best/idedup/actions/workflows/release.yml/badge.svg)](https://github.com/daddy-knows-best/idedup/actions/workflows/release.yml)
-![(https://github.com/daddy-knows-best/idedup/blob/main/pybadge.svg)](https://github.com/daddy-knows-best/idedup/blob/main/pybadge.svg)
+[![Pybadges](https://github.com/daddy-knows-best/idedup/blob/main/pybadge.svg)](https://github.com/daddy-knows-best/idedup/blob/main/pybadge.svg)
 
 # idedup
 
