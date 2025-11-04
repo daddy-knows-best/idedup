@@ -1,0 +1,27 @@
+    name: Release Python Package
+
+    on:
+      push:
+        tags:
+          - 'v*' # Trigger on tags starting with 'v'
+
+    jobs:
+      build-and-release:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v4
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: '3.9' # Specify your Python version
+        - name: Install build dependencies
+          run: pip install build twine
+        - name: Build sdist and wheel
+          run: python -m build
+        - name: Create GitHub Release
+          uses: softprops/action-gh-release@v1
+          with:
+            files: dist/*
+            generate_release_notes: true
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
