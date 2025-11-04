@@ -209,3 +209,6 @@ __marimo__/
 # pcap
 *.pcap
 *.pcapng
+
+# DS_Store
+.DS_Store
