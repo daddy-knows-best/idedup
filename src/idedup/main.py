@@ -18,6 +18,7 @@ By default, idedup will behave as 'idedup -f'
 """
 
     print(help_message)
+    exit(0)
 
 
 def main():

@@ -100,3 +100,45 @@ def test_reverse_mode_updates_indices(monkeypatch):
     # last occurrences: 'a' last at line 4, 'b' last at line 5
     assert mapping.get("a") == 4
     assert mapping.get("b") == 5
+
+
+@pytest.mark.parametrize("flag", ["-h", "--help"])
+def test_help_flags_print_help_and_exit(monkeypatch, flag):
+    """Verify that help flags print the usage message and exit with code 0."""
+    # Provide some stdin so idedup doesn't block reading
+    monkeypatch.setattr(sys, "argv", ["idedup", flag])
+    monkeypatch.setattr(sys, "stdin", io.StringIO(""))
+
+    buf = io.StringIO()
+    old_stdout = sys.stdout
+    try:
+        sys.stdout = buf
+        with pytest.raises(SystemExit) as exc:
+            # calling main() should cause a SystemExit from print_help()
+            idedup_main()
+    finally:
+        sys.stdout = old_stdout
+
+    # SystemExit with code 0 expected
+    assert exc.value.code == 0
+    out = buf.getvalue()
+    assert "Usage" in out or "Usage :" in out
+
+
+def test_unknown_arg_triggers_help(monkeypatch):
+    """An unknown argument should show the help and exit."""
+    monkeypatch.setattr(sys, "argv", ["idedup", "--not-a-real-arg"])
+    monkeypatch.setattr(sys, "stdin", io.StringIO(""))
+
+    buf = io.StringIO()
+    old_stdout = sys.stdout
+    try:
+        sys.stdout = buf
+        with pytest.raises(SystemExit) as exc:
+            idedup_main()
+    finally:
+        sys.stdout = old_stdout
+
+    assert exc.value.code == 0
+    out = buf.getvalue()
+    assert "Usage" in out or "Usage :" in out
