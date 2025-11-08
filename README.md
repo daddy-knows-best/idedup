@@ -2,7 +2,7 @@
 [![Release Python Package](https://github.com/daddy-knows-best/idedup/actions/workflows/release.yml/badge.svg)](https://github.com/daddy-knows-best/idedup/actions/workflows/release.yml)
 ![](https://github.com/daddy-knows-best/rstrip/blob/main/pybadge.svg)
 
-[![An image of @seungyeop's Holopin badges, which is a link to view their full Holopin profile](https://holopin.me/seungyeop)](https://holopin.io/@seungyeop)
+![](https://holopin.io/@seungyeop)
 
 # idedup
 
@@ -21,7 +21,7 @@ $ svactivate
 (test_idedup) $ uv pip install -i https://test.pypi.org/simple/ idedup
 Resolved 1 package in 9ms
 Installed 1 package in 5ms
- + idedup==0.1.0
+ + idedup==0.3.1
 (test_idedup) $ tshark -r test.pcapng -T fields -e frame.protocols | cat -n
      1	eth:ethertype:ip:udp:dhcp
      2	eth:ethertype:ip:udp:data
