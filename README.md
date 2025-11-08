@@ -2,7 +2,7 @@
 [![Release Python Package](https://github.com/daddy-knows-best/idedup/actions/workflows/release.yml/badge.svg)](https://github.com/daddy-knows-best/idedup/actions/workflows/release.yml)
 ![](https://github.com/daddy-knows-best/rstrip/blob/main/pybadge.svg)
 
-![](https://holopin.io/@seungyeop)
+![](https://holopin.me/seungyeop)
 
 # idedup
 
