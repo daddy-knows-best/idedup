@@ -1,105 +1,163 @@
 import io
 import sys
-from contextlib import contextmanager
-from idedup.main import main
+import pytest
+
+from idedup.main import main as idedup_main
 
 
-@contextmanager
-def capture_stdout():
-    """Capture stdout for testing"""
-    new_out = io.StringIO()
-    old_out = sys.stdout
+def _simulate_idedup_output(input_data: str, first: bool = True) -> str:
+    """Simulate the output of idedup.idedup_alt to compute expected output.
+
+    This mirrors the behavior in `src/idedup/main.py`:
+    - lines are read from stdin, stripped with str.strip()
+    - when `first` is True, first occurrence is kept; otherwise value is overwritten
+    - number width is computed as (last_line // 10) + 5
+    - output is each mapping printed as ``{index:>{width}}\t{key}\n`` in insertion order
+    """
+    indexed = {}
+    last_line = 0
+    # emulate reading lines as the program does
+    buf = io.StringIO(input_data)
+    for idx, line in enumerate(buf, start=1):
+        key = line.strip()
+        last_line = idx
+        if first:
+            if key in indexed:
+                continue
+        indexed[key] = idx
+
+    number_of_digit = (last_line // 10) + 5
+    parts = []
+    for k, v in indexed.items():
+        parts.append(f"{v:>{number_of_digit}}\t{k}")
+    return "\n".join(parts) + ("\n" if parts else "")
+
+
+def _run_main_and_get_output(monkeypatch, input_data: str, args=None) -> str:
+    args = args or []
+    monkeypatch.setattr(sys, "argv", ["idedup"] + args)
+    monkeypatch.setattr(sys, "stdin", io.StringIO(input_data))
+
+    # Capture stdout by replacing sys.stdout temporarily
+    buf = io.StringIO()
+    old_stdout = sys.stdout
     try:
-        sys.stdout = new_out
-        yield new_out
+        sys.stdout = buf
+        idedup_main()
     finally:
-        sys.stdout = old_out
+        sys.stdout = old_stdout
+
+    return buf.getvalue()
 
 
-@contextmanager
-def provide_stdin(content):
-    """Provide stdin content for testing"""
-    old_stdin = sys.stdin
-    sys.stdin = io.StringIO(content)
+@pytest.mark.parametrize(
+    "input_data,first",
+    [
+        ("apple\nbanana\napple\norange\nbanana\n", True),
+        ("", True),
+        ("one\ntwo\nthree\nfour\n", True),
+        ("same\nsame\nsame\nsame\n", True),
+        ("  spaces  \n\ttabs\t\n  spaces  \n\ttabs\t\n", True),
+    ],
+)
+def test_idedup_behaviour(monkeypatch, input_data, first):
+    """Parametrized tests covering the common behaviors of the CLI.
+
+    The expected output is computed with the same algorithm used by the
+    implementation so tests remain robust to the number-width calculation.
+    """
+    out = _run_main_and_get_output(monkeypatch, input_data)
+    expected = _simulate_idedup_output(input_data, first=first)
+    assert out == expected
+
+
+def test_line_number_formatting(monkeypatch):
+    """Ensure all printed line-number fields have the same width."""
+    # 12 lines to force a width change if the algorithm had a bug
+    input_data = "\n".join(f"line{i}" for i in range(12)) + "\n"
+    out = _run_main_and_get_output(monkeypatch, input_data)
+    lines = [ln for ln in out.splitlines() if ln]
+    assert lines, "expected non-empty output"
+
+    widths = [len(ln.split("\t")[0]) for ln in lines]
+    assert all(w == widths[0] for w in widths), "line number widths are inconsistent"
+
+
+def test_reverse_mode_updates_indices(monkeypatch):
+    """When run with -r the recorded index should be the last occurrence."""
+    input_data = "a\na\nb\na\nb\n"
+    # run with -r (reverse) as the argument
+    out = _run_main_and_get_output(monkeypatch, input_data, args=["-r"])
+
+    # parse output into mapping key -> index
+    mapping = {}
+    for ln in out.splitlines():
+        if not ln:
+            continue
+        num, key = ln.split("\t", 1)
+        mapping[key] = int(num.strip())
+
+    # last occurrences: 'a' last at line 4, 'b' last at line 5
+    assert mapping.get("a") == 4
+    assert mapping.get("b") == 5
+
+
+@pytest.mark.parametrize("flag", ["-h", "--help"])
+def test_help_flags_print_help_and_exit(monkeypatch, flag):
+    """Verify that help flags print the usage message and exit with code 0."""
+    # Provide some stdin so idedup doesn't block reading
+    monkeypatch.setattr(sys, "argv", ["idedup", flag])
+    monkeypatch.setattr(sys, "stdin", io.StringIO(""))
+
+    buf = io.StringIO()
+    old_stdout = sys.stdout
     try:
-        yield
+        sys.stdout = buf
+        with pytest.raises(SystemExit) as exc:
+            # calling main() should cause a SystemExit from print_help()
+            idedup_main()
     finally:
-        sys.stdin = old_stdin
+        sys.stdout = old_stdout
+
+    # SystemExit with code 0 expected
+    assert exc.value.code == 0
+    out = buf.getvalue()
+    assert "Usage" in out or "Usage :" in out
 
 
-def test_basic_deduplication():
-    """Test basic deduplication functionality"""
-    input_data = "apple\nbanana\napple\norange\nbanana\n"
-    expected_output = "    1\tapple\n    2\tbanana\n    4\torange\n"
+def test_unknown_arg_triggers_help(monkeypatch):
+    """An unknown argument should show the help and exit."""
+    monkeypatch.setattr(sys, "argv", ["idedup", "--not-a-real-arg"])
+    monkeypatch.setattr(sys, "stdin", io.StringIO(""))
 
-    with provide_stdin(input_data):
-        with capture_stdout() as output:
-            main()
+    buf = io.StringIO()
+    old_stdout = sys.stdout
+    try:
+        sys.stdout = buf
+        with pytest.raises(SystemExit) as exc:
+            idedup_main()
+    finally:
+        sys.stdout = old_stdout
 
-    assert output.getvalue() == expected_output
-
-
-def test_empty_input():
-    """Test handling of empty input"""
-    input_data = ""
-    expected_output = ""
-
-    with provide_stdin(input_data):
-        with capture_stdout() as output:
-            main()
-
-    assert output.getvalue() == expected_output
+    assert exc.value.code == 0
+    out = buf.getvalue()
+    assert "Usage" in out or "Usage :" in out
 
 
-def test_all_unique_lines():
-    """Test handling of input with no duplicates"""
-    input_data = "one\ntwo\nthree\nfour\n"
-    expected_output = "    1\tone\n    2\ttwo\n    3\tthree\n    4\tfour\n"
+@pytest.mark.parametrize("flag", ["-f", "--forward"])
+def test_forward_flag_keeps_first_occurrence(monkeypatch, flag):
+    """When run with -f/--forward, the recorded index should be the first occurrence."""
+    # Input where items repeat; first occurrences are at lines 1,3,6 respectively
+    input_data = "x\nx\ny\nx\ny\nz\nz\n"
+    out = _run_main_and_get_output(monkeypatch, input_data, args=[flag])
 
-    with provide_stdin(input_data):
-        with capture_stdout() as output:
-            main()
+    mapping = {}
+    for ln in out.splitlines():
+        if not ln:
+            continue
+        num, key = ln.split("\t", 1)
+        mapping[key] = int(num.strip())
 
-    assert output.getvalue() == expected_output
-
-
-def test_all_duplicate_lines():
-    """Test handling of input with all duplicate lines"""
-    input_data = "same\nsame\nsame\nsame\n"
-    expected_output = "    1\tsame\n"
-
-    with provide_stdin(input_data):
-        with capture_stdout() as output:
-            main()
-
-    assert output.getvalue() == expected_output
-
-
-def test_whitespace_handling():
-    """Test handling of whitespace in input"""
-    input_data = "  spaces  \n\ttabs\t\n  spaces  \n\ttabs\t\n"
-    expected_output = "    1\tspaces\n    2\ttabs\n"
-
-    with provide_stdin(input_data):
-        with capture_stdout() as output:
-            main()
-
-    assert output.getvalue() == expected_output
-
-
-def test_line_number_formatting():
-    """Test line number formatting with different input sizes"""
-    # Create input with 12 lines to test number formatting
-    input_data = "\n".join(f"line{i}" for i in range(12))
-
-    with provide_stdin(input_data):
-        with capture_stdout() as output:
-            main()
-
-    # Check that all line numbers are right-aligned
-    lines = output.getvalue().splitlines()
-    if lines:
-        # All lines should have the same width for the line number part
-        line_number_width = len(lines[0].split("\t")[0])
-        for line in lines:
-            assert len(line.split("\t")[0]) == line_number_width
+    assert mapping.get("x") == 1
+    assert mapping.get("y") == 3
+    assert mapping.get("z") == 6
