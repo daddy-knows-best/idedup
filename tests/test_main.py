@@ -142,3 +142,22 @@ def test_unknown_arg_triggers_help(monkeypatch):
     assert exc.value.code == 0
     out = buf.getvalue()
     assert "Usage" in out or "Usage :" in out
+
+
+@pytest.mark.parametrize("flag", ["-f", "--forward"])
+def test_forward_flag_keeps_first_occurrence(monkeypatch, flag):
+    """When run with -f/--forward, the recorded index should be the first occurrence."""
+    # Input where items repeat; first occurrences are at lines 1,3,6 respectively
+    input_data = "x\nx\ny\nx\ny\nz\nz\n"
+    out = _run_main_and_get_output(monkeypatch, input_data, args=[flag])
+
+    mapping = {}
+    for ln in out.splitlines():
+        if not ln:
+            continue
+        num, key = ln.split("\t", 1)
+        mapping[key] = int(num.strip())
+
+    assert mapping.get("x") == 1
+    assert mapping.get("y") == 3
+    assert mapping.get("z") == 6
