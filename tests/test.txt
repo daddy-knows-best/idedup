@@ -1,0 +1,13 @@
+eth:ethertype:ip:udp:dhcp
+eth:ethertype:ip:udp:data
+eth:ethertype:ip:udp:data
+eth:ethertype:ip:udp:data
+eth:ethertype:ip:udp:data
+eth:ethertype:ip:icmp:ip:udp
+eth:ethertype:ip:icmp:ip:udp
+eth:ethertype:ip:tcp:tls
+eth:ethertype:ip:tcp:tls
+eth:ethertype:ip:tcp
+eth:ethertype:ip:udp:data
+eth:ethertype:ip:udp:data
+eth:ethertype:ipv6:udp:data
