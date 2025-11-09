@@ -22,26 +22,40 @@ $ svactivate
 Resolved 1 package in 9ms
 Installed 1 package in 5ms
  + idedup==0.3.1
-(test_idedup) $ tshark -r test.pcapng -T fields -e frame.protocols | cat -n
-     1	eth:ethertype:ip:udp:dhcp
-     2	eth:ethertype:ip:udp:data
-     3	eth:ethertype:ip:udp:data
-     4	eth:ethertype:ip:udp:data
-     5	eth:ethertype:ip:udp:data
-     6	eth:ethertype:ip:icmp:ip:udp
-     7	eth:ethertype:ip:icmp:ip:udp
-     8	eth:ethertype:ip:tcp:tls
-     9	eth:ethertype:ip:tcp:tls
-    10	eth:ethertype:ip:tcp
-    11	eth:ethertype:ip:udp:data
-    12	eth:ethertype:ip:udp:data
-    13	eth:ethertype:ipv6:udp:data
-(test_idedup) $ tshark -r test.pcapng -T fields -e frame.protocols | idedup
-     1	eth:ethertype:ip:udp:dhcp
-     2	eth:ethertype:ip:udp:data
-     6	eth:ethertype:ip:icmp:ip:udp
-     8	eth:ethertype:ip:tcp:tls
-    10	eth:ethertype:ip:tcp
-    13	eth:ethertype:ipv6:udp:data
-(test_idedup) $
+(idedup) $ cat tests/test.txt | cat -n
+     1  eth:ethertype:ip:udp:dhcp
+     2  eth:ethertype:ip:udp:data
+     3  eth:ethertype:ip:udp:data
+     4  eth:ethertype:ip:udp:data
+     5  eth:ethertype:ip:udp:data
+     6  eth:ethertype:ip:icmp:ip:udp
+     7  eth:ethertype:ip:icmp:ip:udp
+     8  eth:ethertype:ip:tcp:tls
+     9  eth:ethertype:ip:tcp:tls
+    10  eth:ethertype:ip:tcp
+    11  eth:ethertype:ip:udp:data
+    12  eth:ethertype:ip:udp:data
+    13  eth:ethertype:ipv6:udp:data
+(idedup) $ cat tests/test.txt | idedup
+     1  eth:ethertype:ip:udp:dhcp
+     2  eth:ethertype:ip:udp:data
+     6  eth:ethertype:ip:icmp:ip:udp
+     8  eth:ethertype:ip:tcp:tls
+    10  eth:ethertype:ip:tcp
+    13  eth:ethertype:ipv6:udp:data
+(idedup) $ cat tests/test.txt | idedup -r
+     1  eth:ethertype:ip:udp:dhcp
+    12  eth:ethertype:ip:udp:data
+     7  eth:ethertype:ip:icmp:ip:udp
+     9  eth:ethertype:ip:tcp:tls
+    10  eth:ethertype:ip:tcp
+    13  eth:ethertype:ipv6:udp:data
+(idedup) $ cat tests/test.txt | idedup -f
+     1  eth:ethertype:ip:udp:dhcp
+     2  eth:ethertype:ip:udp:data
+     6  eth:ethertype:ip:icmp:ip:udp
+     8  eth:ethertype:ip:tcp:tls
+    10  eth:ethertype:ip:tcp
+    13  eth:ethertype:ipv6:udp:data
+(idedup) $
 ```
